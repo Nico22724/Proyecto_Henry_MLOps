@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Date, Float, ForeignKey, func
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.sql import extract
@@ -53,10 +53,16 @@ actors_table = Table(
     Column('name', String),
 )
 
-production_staff_table = Table(
+staff_table = Table(
     'ID_STAFF', metadata,
     Column('id_staff', Integer, primary_key=True),
     Column('name', String),
+)
+
+staff_load_table = Table(
+    'STAFF_LOAD', metadata,
+    Column('id_staff', Integer, primary_key=True),
+    Column('cargo', String),
 )
 
 id_genres_table = Table(
@@ -112,7 +118,10 @@ def read_items(db: Session = Depends(get_db)):
 
 def month_name_to_number(month_name: str):
     month_name = month_name.lower()
-    months = {name.lower(): num for num, name in enumerate(calendar.month_name) if name}
+    months = {
+        'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+        'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+    }
     return months.get(month_name)
 
 @app.get("/cantidad_filmaciones_mes/")
@@ -134,60 +143,127 @@ def cantidad_filmaciones_dia(dia: str, db: Session = Depends(get_db)):
 
     query = movies_table.select().where(extract('day', movies_table.c.release_date) == day_number)
     result = db.execute(query).fetchall()
-    return {"message": f"{len(result)} películas fueron estrenadas en los días {dia}"}
+    return {"message": f"{len(result)} películas fueron estrenadas en el dia {dia}"}
 
 @app.get("/score_titulo/")
 def score_titulo(titulo_de_la_filmacion: str, db: Session = Depends(get_db)):
-    query = movies_table.select().where(movies_table.c.title == titulo_de_la_filmacion)
-    result = db.execute(query).fetchone()
-    if result:
-        return {"title": result.title, "release_year": result.release_date.year, "score": result.vote_average}
+    # Buscar el ID de la película con el título proporcionado en BELONG_NAME_ID_MOVIE
+    query_belongs = belong_name_id_movie_table.select().where(
+        belong_name_id_movie_table.c.name == titulo_de_la_filmacion
+    )
+    belong_info = db.execute(query_belongs).fetchone()
+
+    if belong_info:
+        # Obtener los detalles de la película desde MOVIES usando el ID obtenido
+        query_movie = movies_table.select().where(movies_table.c.id_movie == belong_info.id_movie)
+        movie = db.execute(query_movie).fetchone()
+
+        if movie:
+            return {
+                "title": titulo_de_la_filmacion,
+                "release_year": movie.release_date.year,
+                "score": movie.vote_average
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Película no encontrada en la tabla MOVIES")
     else:
-        return {"error": "Película no encontrada"}
+        raise HTTPException(status_code=404, detail="Película no encontrada en la tabla BELONG_NAME_ID_MOVIE")
+
 
 @app.get("/votos_titulo/")
 def votos_titulo(titulo_de_la_filmacion: str, db: Session = Depends(get_db)):
-    query = movies_table.select().where(movies_table.c.title == titulo_de_la_filmacion)
-    result = db.execute(query).fetchone()
-    if result and result.vote_count >= 2000:
-        return {"title": result.title, "release_year": result.release_date.year, "votes": result.vote_count, "average_vote": result.vote_average}
-    elif result:
-        return {"message": "La película no cumple con la condición de tener al menos 2000 valoraciones"}
+    # Buscar el ID de la película con el título proporcionado en BELONG_NAME_ID_MOVIE
+    query_belongs = belong_name_id_movie_table.select().where(
+        belong_name_id_movie_table.c.name == titulo_de_la_filmacion
+    )
+    belong_info = db.execute(query_belongs).fetchone()
+
+    if belong_info:
+        # Obtener los detalles de la película desde MOVIES usando el ID obtenido
+        query_movie = movies_table.select().where(movies_table.c.id_movie == belong_info.id_movie)
+        movie = db.execute(query_movie).fetchone()
+
+        if movie:
+            if movie.vote_count >= 2000:
+                return {
+                    "title": titulo_de_la_filmacion,
+                    "release_year": movie.release_date.year,
+                    "votes": movie.vote_count,
+                    "average_vote": movie.vote_average
+                }
+            else:
+                raise HTTPException(status_code=400, detail="La película no cumple con la condición de tener al menos 2000 valoraciones")
+        else:
+            raise HTTPException(status_code=404, detail="Película no encontrada en la tabla MOVIES")
     else:
-        return {"error": "Película no encontrada"}
+        raise HTTPException(status_code=404, detail="Película no encontrada en la tabla BELONG_NAME_ID_MOVIE")
+
 
 @app.get("/get_actor/")
 def get_actor(nombre_actor: str, db: Session = Depends(get_db)):
-    query = actors_table.select().where(actors_table.c.name == nombre_actor)
-    actor = db.execute(query).fetchone()
+    query_actor = actors_table.select().where(actors_table.c.name == nombre_actor)
+    actor = db.execute(query_actor).fetchone()
     if actor:
-        movies_query = casting_table.select().where(casting_table.c.id_actor == actor.id_actor)
-        movie_ids = [row.movie_id for row in db.execute(movies_query).fetchall()]
-        movies_query = movies_table.select().where(movies_table.c.id_movie.in_(movie_ids))
-        movies = db.execute(movies_query).fetchall()
-        total_revenue = sum(movie.revenue for movie in movies)
-        return {"actor": actor.name, "number_of_movies": len(movies), "total_revenue": total_revenue, "average_revenue": total_revenue / len(movies) if movies else 0}
+        query_movies = casting_table.select().where(casting_table.c.id_actor == actor.id_actor)
+        movie_ids = [row.movie_id for row in db.execute(query_movies).fetchall()]
+        query_movies_details = movies_table.select().where(movies_table.c.id_movie.in_(movie_ids))
+        movies = db.execute(query_movies_details).fetchall()
+        if movies:
+            total_revenue = sum(movie.revenue for movie in movies)
+            return {
+                "actor": nombre_actor,
+                "number_of_movies": len(movies),
+                "total_revenue": total_revenue,
+                "average_revenue": total_revenue / len(movies) if movies else 0
+            }
+        else:
+            raise HTTPException(status_code=404, detail=f"No se encontraron películas para el actor {nombre_actor}")
     else:
-        return {"error": "Actor no encontrado"}
+        raise HTTPException(status_code=404, detail="Actor no encontrado")
 
 @app.get("/get_director/")
 def get_director(nombre_director: str, db: Session = Depends(get_db)):
-    query = production_staff_table.select().where(production_staff_table.c.name == nombre_director)
-    director = db.execute(query).fetchone()
+    # Verificar si el nombre del director existe en la tabla ID_STAFF
+    query_director = staff_table.select().where(staff_table.c.name == nombre_director)
+    director = db.execute(query_director).fetchone()
     if director:
-        movies_query = production_staff_table.select().where(production_staff_table.c.id_staff == director.id_staff)
-        movie_ids = [row.movie_id for row in db.execute(movies_query).fetchall()]
-        movies_query = movies_table.select().where(movies_table.c.id_movie.in_(movie_ids))
-        movies = db.execute(movies_query).fetchall()
-        director_info = []
-        for movie in movies:
-            director_info.append({
-                "title": movie.title,
-                "release_date": movie.release_date,
-                "individual_revenue": movie.revenue,
-                "budget": movie.budget,
-                "profit": movie.revenue - movie.budget
-            })
-        return {"director": director.name, "movies": director_info}
+        # Si el director existe, verificar si tiene el cargo de "director" en la tabla STAFF_LOAD
+        query_cargo = staff_load_table.select().where(
+            (staff_load_table.c.id_staff == director.id_staff) &
+            (staff_load_table.c.cargo == 'director')
+        )
+        cargo_director = db.execute(query_cargo).fetchone()
+        if cargo_director:
+            # Si tiene el cargo de director, proceder a obtener las películas del director
+            query_movies = production_staff_table.select().where(production_staff_table.c.id_staff == director.id_staff)
+            movies = db.execute(query_movies).fetchall()
+            if movies:
+                director_info = []
+                for movie in movies:
+                    # Obtener el nombre de la película desde BELONG_NAME_ID_MOVIE
+                    query_belongs = belong_name_id_movie_table.select().where(
+                        belong_name_id_movie_table.c.id_movie == movie.id_movie
+                    )
+                    belong_info = db.execute(query_belongs).fetchone()
+                    if belong_info:
+                        movie_title = belong_info.name
+                    else:
+                        movie_title = "Título no encontrado"
+
+                    director_info.append({
+                        "title": movie_title,
+                        "release_date": movie.release_date,
+                        "individual_revenue": movie.revenue,
+                        "budget": movie.budget,
+                        "profit": movie.revenue - movie.budget
+                    })
+                return {
+                    "director": nombre_director,
+                    "movies": director_info
+                }
+            else:
+                raise HTTPException(status_code=404, detail=f"No se encontraron películas para el director {nombre_director}")
+        else:
+            raise HTTPException(status_code=404, detail=f"{nombre_director} no tiene el cargo de director")
     else:
-        return {"error": "Director no encontrado"}
+        raise HTTPException(status_code=404, detail="Director no encontrado")
