@@ -43,7 +43,11 @@ df_production_staff_parte_dos = pd.read_csv(url_df_production_staff_parte_dos)
 df_casting = pd.concat([df_casting_parte_uno, df_casting_parte_dos])
 df_production_staff = pd.concat([df_production_staff_parte_uno, df_production_staff_parte_dos])
 
-app = FastAPI()
+app = FastAPI(
+    title="FastAPI",
+    description="Endpoints API",
+    version="1.0.0"
+)
 
 def mes_a_numero(mes):
     meses = {
