@@ -165,3 +165,8 @@ def get_director(nombre_director: str):
         "peliculas": resultado,
         "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
     }
+    
+# Punto de entrada
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
