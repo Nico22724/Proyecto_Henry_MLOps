@@ -1,5 +1,5 @@
 # Proyecto_Henry_MLOps
-##La Importancia de la Documentación en Proyectos de Ciencia de Datos:
+## La Importancia de la Documentación en Proyectos de Ciencia de Datos:
 
 La documentación desempeña un papel crucial en los proyectos de Ciencia de Datos por varias razones fundamentales:
 
@@ -12,3 +12,48 @@ Fomenta la Transparencia y Reproducibilidad: Facilita la validación de resultad
 Incentiva la Colaboración y Contribución: Un README bien estructurado facilita que nuevos colaboradores se integren al proyecto, entendiendo rápidamente cómo pueden contribuir y mejorar el trabajo existente.
 
 Para documentar de manera efectiva, organiza el README en secciones como Introducción, Instalación, Uso, Metodología, Resultados y Contribución. Utiliza un lenguaje claro y proporciona instrucciones detalladas para maximizar la utilidad y accesibilidad de la documentación.
+
+## Descripción
+Este proyecto tiene como objetivo disponibilizar los datos sobre peliculas pasando por un proceso de ETL en el cual extraemos la informacion relevante para la solucion al problema la transformamos para su correcta manipulacion y la cargamos para comenzar a trabajar extrayendo informacion valiosa mediante un API que tiene como objetivo dar a conocer informacion valiosa que ayude a la toma de decisiones estratégicas y un ML que ayude a recomendar otro tipo de peliculas basado en la primera pelicula vista por el usuario.
+
+## Tabla de contenido 
+1. [Introducción](#introducción)
+2. [Instalación y Requisitos](#instalación-y-requisitos)
+3. [Estructura del Proyecto](#estructura-del-proyecto)
+4. [Datos y Fuentes](#datos-y-fuentes)
+5. [Metodología](#metodología)
+6. [Contribución y Colaboración](#contribución-y-colaboración)
+7. [Licencia](#licencia)
+
+## Instalacion y Requisitos 
+**Requisitos**
+- Python 3.7 o superior
+- fastapi
+- uvicorn
+- scikit-learn
+
+**Pasos de instlación**
+1. Clonar el repositorio (https://github.com/Nico22724/Proyecto_Henry_MLOps.git)
+2. Crear un entorno virtual: `python -m venv venv`
+3. Activar el entorno virtual:
+   - Windows: `venv\Scripts\activate`
+   - macOS/Linux: `source venv/bin/activate`
+4. Instalar las dependencias: `pip install -r requirements.txt`
+   
+## Metodología
+Se utilizaron técnicas de análisis exploratorio de datos para identificar patrones y tendencias en los datos de ventas. Se aplicaron modelos de aprendizaje automático, como regresión lineal y árboles de decisión, para predecir las ventas futuras. También se realizaron análisis de segmentación de clientes y optimización de estrategias de marketing.
+
+## Datos y Fuentes
+Los datos utilizados en este proyecto provienen de la base de datos interna de la tienda de ropa. Los datos incluyen información sobre ventas, clientes, inventario y promociones. Los archivos de datos se encuentran en la carpeta `data/` en formato CSV.
+
+## Estructura del Proyecto
+- `data/`: Contiene los archivos de datos utilizados en el proyecto.
+- `notebooks/`: Incluye el notebook con el ETL.
+- `src/`: Código fuente del proyecto.
+- `README.md`: Archivo de documentación del proyecto.
+
+## Contribución y Colaboración
+Los contribuidores son bienvenidos a reportar problemas, enviar solicitudes de funciones o enviar pull requests en el repositorio de GitHub.
+
+## Autores:
+Este proyecto fue realizado por: Nicolas Hoyos .
