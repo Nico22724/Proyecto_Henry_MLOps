@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # URLs de los archivos CSV que se van a cargar
 url_df_id_belong_id_genre = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/belong_id_genre.csv"
@@ -182,6 +184,41 @@ def get_director(nombre_director: str):
         "peliculas": resultado,
         "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
     }
+    
+# Función para combinar información de las películas
+def obtener_peliculas_completas():
+    df_completa = df_belong_name_id_movie.merge(df_movies, on='id_movie')
+    df_completa = df_completa.merge(df_id_movie_id_genre, on='id_movie')
+    df_completa = df_completa.merge(df_genres_id, left_on='id_genre', right_on='id_genre')
+    df_completa['genres'] = df_completa.groupby('id_movie')['genre'].transform(lambda x: ' '.join(x))
+    df_completa = df_completa.drop_duplicates(subset=['id_movie'])
+    return df_completa
+
+# Obtener el DataFrame consolidado
+df_peliculas_completas = obtener_peliculas_completas()
+
+# Vectorizar los géneros para calcular la similitud
+vectorizer = TfidfVectorizer()
+tfidf_matrix = vectorizer.fit_transform(df_peliculas_completas['genres'])
+
+# Calcular la similitud del coseno
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+# Función para obtener el índice de la película dado su título
+def obtener_indice_titulo(titulo):
+    try:
+        return df_peliculas_completas[df_peliculas_completas['name'].str.contains(titulo, case=False)].index[0]
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Película no encontrada")
+
+# Función de recomendación
+@app.get("/recomendacion/{titulo}")
+def recomendacion(titulo: str):
+    indice_pelicula = obtener_indice_titulo(titulo)
+    similitudes = list(enumerate(cosine_sim[indice_pelicula]))
+    similitudes = sorted(similitudes, key=lambda x: x[1], reverse=True)
+    peliculas_similares = [df_peliculas_completas['name'].iloc[i[0]] for i in similitudes[1:6]]
+    return {"titulo": titulo, "recomendaciones": peliculas_similares}
 
 # Punto de entrada para ejecutar la aplicación FastAPI con Uvicorn
 if __name__ == "__main__":
