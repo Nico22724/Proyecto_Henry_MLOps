@@ -30,7 +30,7 @@ df_staff_load = pd.read_csv(url_df_staff_load)
 url_df_casting_parte_uno = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte1.csv"
 df_casting_parte_uno = pd.read_csv(url_df_casting_parte_uno)
 
-url_df_casting_parte_dos = "https://github.com/Nico22724/Proyecto_Henry_MLOps/blob/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte2.csv"
+url_df_casting_parte_dos = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte2.csv"
 df_casting_parte_dos = pd.read_csv(url_df_casting_parte_dos)
 
 #MANEJAREMOS LA TABLA STAFF DONDE ESTAN EL PERSONAL
@@ -42,6 +42,8 @@ df_production_staff_parte_dos = pd.read_csv(url_df_production_staff_parte_dos)
 
 df_casting = pd.concat([df_casting_parte_uno, df_casting_parte_dos])
 df_production_staff = pd.concat([df_production_staff_parte_uno, df_production_staff_parte_dos])
+
+app = FastAPI()
 
 def mes_a_numero(mes):
     meses = {
