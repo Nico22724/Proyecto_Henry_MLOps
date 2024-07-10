@@ -19,9 +19,9 @@ Este proyecto tiene como objetivo disponibilizar los datos sobre peliculas pasan
 ## Tabla de contenido 
 1. [Introducción](#introducción)
 2. [Instalación y Requisitos](#instalación-y-requisitos)
-3. [Estructura del Proyecto](#estructura-del-proyecto)
+3. [Metodología](#metodología)
 4. [Datos y Fuentes](#datos-y-fuentes)
-5. [Metodología](#metodología)
+5. [Estructura del Proyecto](#estructura-del-proyecto)
 6. [Contribución y Colaboración](#contribución-y-colaboración)
 7. [Licencia](#licencia)
 
