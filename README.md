@@ -41,10 +41,10 @@ Este proyecto tiene como objetivo disponibilizar los datos sobre peliculas pasan
 4. Instalar las dependencias: `pip install -r requirements.txt`
    
 ## Metodología
-Se utilizaron técnicas de análisis exploratorio de datos para identificar patrones y tendencias en los datos de ventas. Se aplicaron modelos de aprendizaje automático, como regresión lineal y árboles de decisión, para predecir las ventas futuras. También se realizaron análisis de segmentación de clientes y optimización de estrategias de marketing.
+Se utilizaron diferentes tecnicas de Ingeneria de Datos como el ETL para disponibilizar los datos para posteriormente explorar y revisar que no contenga valos nulos o incorrectos que puedan afectar a nuestro modelo de ML o consultas de la APi realizando un manejo adecuado de las herramientas para poder llevar a cabo el proyecto
 
 ## Datos y Fuentes
-Los datos utilizados en este proyecto provienen de la base de datos interna de la tienda de ropa. Los datos incluyen información sobre ventas, clientes, inventario y promociones. Los archivos de datos se encuentran en la carpeta `data/` en formato CSV.
+Los datos utilizados en este proyecto provienen del dataset propuestos.
 
 ## Estructura del Proyecto
 - `data/`: Contiene los archivos de datos utilizados en el proyecto.
