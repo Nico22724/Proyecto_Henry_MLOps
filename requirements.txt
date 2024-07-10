@@ -1,4 +1,3 @@
 fastapi
 uvicorn
-sqlalchemy
-cx_Oracle
+pandas
