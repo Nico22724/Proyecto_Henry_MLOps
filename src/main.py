@@ -68,8 +68,9 @@ def cantidad_filmaciones_mes(mes: str):
     
     df_movies['release_date'] = pd.to_datetime(df_movies['release_date'], errors='coerce')
     peliculas_mes = df_movies[df_movies['release_date'].dt.month == mes_numero]
-    cantidad = len(peliculas_mes)
+    cantidad = int(len(peliculas_mes))  # Convertir a tipo nativo de Python
     return {"mes": mes, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en el mes de {mes}"}
+
 
 @app.get("/cantidad_filmaciones_dia/{dia}")
 def cantidad_filmaciones_dia(dia: str):
@@ -79,8 +80,9 @@ def cantidad_filmaciones_dia(dia: str):
     
     df_movies['release_date'] = pd.to_datetime(df_movies['release_date'], errors='coerce')
     peliculas_dia = df_movies[df_movies['release_date'].dt.day_name() == dia_nombre]
-    cantidad = len(peliculas_dia)
+    cantidad = int(len(peliculas_dia))  # Convertir a tipo nativo de Python
     return {"dia": dia, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en los días {dia}"}
+
 
 @app.get("/score_titulo/{titulo}")
 def score_titulo(titulo: str):
@@ -93,8 +95,8 @@ def score_titulo(titulo: str):
     movie_details = df_movies[df_movies['id_movie'] == id_movie].iloc[0]
     return {
         "titulo": pelicula_info['name'],
-        "anio_estreno": movie_details['release_year'],
-        "score": movie_details['popularity'],
+        "anio_estreno": int(movie_details['release_year']),  # Convertir a tipo nativo de Python
+        "score": float(movie_details['popularity']),  # Convertir a tipo nativo de Python
         "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']} con un score/popularidad de {movie_details['popularity']}"
     }
 
@@ -112,10 +114,11 @@ def votos_titulo(titulo: str):
     
     return {
         "titulo": pelicula_info['name'],
-        "cantidad_votos": movie_details['vote_count'],
-        "promedio_votos": movie_details['vote_average'],
+        "cantidad_votos": int(movie_details['vote_count']),  # Convertir a tipo nativo de Python
+        "promedio_votos": float(movie_details['vote_average']),  # Convertir a tipo nativo de Python
         "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']}. La misma cuenta con un total de {movie_details['vote_count']} valoraciones, con un promedio de {movie_details['vote_average']}"
     }
+
 
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
@@ -154,10 +157,10 @@ def get_director(nombre_director: str):
         pelicula_info = df_movies[df_movies['id_movie'] == row['movie_id']].iloc[0]
         resultado.append({
             "titulo": pelicula_info['title'],
-            "fecha_lanzamiento": pelicula_info['release_date'],
-            "retorno_individual": pelicula_info['return'],
-            "costo": pelicula_info['budget'],
-            "ganancia": pelicula_info['revenue']
+            "fecha_lanzamiento": str(pelicula_info['release_date']),  # Convertir a tipo nativo de Python
+            "retorno_individual": float(pelicula_info['return']),  # Convertir a tipo nativo de Python
+            "costo": float(pelicula_info['budget']),  # Convertir a tipo nativo de Python
+            "ganancia": float(pelicula_info['revenue'])  # Convertir a tipo nativo de Python
         })
     
     return {
@@ -165,6 +168,7 @@ def get_director(nombre_director: str):
         "peliculas": resultado,
         "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
     }
+
     
 # Punto de entrada
 if __name__ == "__main__":
