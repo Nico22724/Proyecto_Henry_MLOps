@@ -144,9 +144,10 @@ def get_director(nombre_director: str):
         raise HTTPException(status_code=404, detail="Director no encontrado")
     
     director_id = director_staff['id_staff'].iloc[0]
-    director_movies = df_production_staff[
-        (df_production_staff['id_staff'] == director_id) & 
-        (df_production_staff['job'] == 'Director')
+    director_movies = pd.concat([df_production_staff_parte_uno, df_production_staff_parte_dos])
+    director_movies = director_movies[
+        (director_movies['id_staff'] == director_id) & 
+        (director_movies['job'] == 'Director')
     ]
     
     if director_movies.empty:
@@ -155,8 +156,11 @@ def get_director(nombre_director: str):
     resultado = []
     for _, row in director_movies.iterrows():
         pelicula_info = df_movies[df_movies['id_movie'] == row['movie_id']].iloc[0]
+        titulo_info = df_belong_name_id_movie[df_belong_name_id_movie['id_movie'] == row['movie_id']]
+        titulo = titulo_info['name'].iloc[0] if not titulo_info.empty else "Título no encontrado"
+        
         resultado.append({
-            "titulo": pelicula_info['title'],
+            "titulo": titulo,
             "fecha_lanzamiento": str(pelicula_info['release_date']),  # Convertir a tipo nativo de Python
             "retorno_individual": float(pelicula_info['return']),  # Convertir a tipo nativo de Python
             "costo": float(pelicula_info['budget']),  # Convertir a tipo nativo de Python
@@ -168,6 +172,7 @@ def get_director(nombre_director: str):
         "peliculas": resultado,
         "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
     }
+
 
     
 # Punto de entrada
