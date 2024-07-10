@@ -1,269 +1,165 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Date, Float, ForeignKey, func
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.sql import extract
-import calendar
-DATABASE_URL = (
-    "oracle+cx_oracle://ADMIN:_KK?G97bC59g.NF@adb.mx-monterrey-1.oraclecloud.com:1522/"
-    "gc7ae344f7ff7b6_databasemovies_medium.adb.oraclecloud.com"
-    "?ssl_server_cert_dn=CN=adb.mx-monterrey-1.oraclecloud.com, O=Oracle Corporation, "
-    "L=Redwood City, ST=California, C=US"
-)
+from fastapi import FastAPI, HTTPException
+import pandas as pd
 
-# Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
-metadata = MetaData()
-# Create a session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+url_df_id_belong_id_genre = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/belong_id_genre.csv"
+df_id_belong_id_genre = pd.read_csv(url_df_id_belong_id_genre)
 
-# Create the FastAPI application
-app = FastAPI()
+url_df_belong_name_id_movie = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/belong_name_id.csv"
+df_belong_name_id_movie = pd.read_csv(url_df_belong_name_id_movie)
 
-# Dependency to get the database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+url_df_movies = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/df_data_central.csv"
+df_movies = pd.read_csv(url_df_movies)
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Movie API"}
+url_df_genres_id = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/genres_id.csv"
+df_genres_id = pd.read_csv(url_df_genres_id)
+
+url_df_id_movie_id_genre = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/id_movie_id_genre.csv"
+df_id_movie_id_genre = pd.read_csv(url_df_id_movie_id_genre)
+
+url_df_id_casting_actor = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/id_casting_actor_purificada.csv"
+df_id_casting_actor = pd.read_csv(url_df_id_casting_actor)
+
+url_df_id_staff = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/id_staff_purificada.csv"
+df_id_staff = pd.read_csv(url_df_id_staff)
+
+url_df_staff_load = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/cargo_staff.csv"
+df_staff_load = pd.read_csv(url_df_staff_load)
 
 
-movies_table = Table(
-    'MOVIES', metadata,
-    Column('id_movie', Integer, primary_key=True),
-    Column('budget', Integer),
-    Column('popularity', Float),
-    Column('release_date', Date),
-    Column('revenue', Integer),
-    Column('runtime', Float),
-    Column('status', String),
-    Column('vote_average', Float),
-    Column('vote_count', Integer),
-    Column('return', Float),
-    Column('release_year', Integer),
-)
+#MANEJAREMOS LOS DATOS QUE ESTAN DIVIDOS PRIMERO LA TABLA CASTING DONDE ESTAN LOS ACTORES POSTULANTES
+url_df_casting_parte_uno = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte1.csv"
+df_casting_parte_uno = pd.read_csv(url_df_casting_parte_uno)
 
-actors_table = Table(
-    'ID_CASTING_ACTOR', metadata,
-    Column('id_actor', Integer, primary_key=True),
-    Column('name', String),
-)
+url_df_casting_parte_dos = "https://github.com/Nico22724/Proyecto_Henry_MLOps/blob/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte2.csv"
+df_casting_parte_dos = pd.read_csv(url_df_casting_parte_dos)
 
-staff_table = Table(
-    'ID_STAFF', metadata,
-    Column('id_staff', Integer, primary_key=True),
-    Column('name', String),
-)
+#MANEJAREMOS LA TABLA STAFF DONDE ESTAN EL PERSONAL
+url_df_production_staff_parte_uno = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/staff_data_parte1.csv"
+df_production_staff_parte_uno = pd.read_csv(url_df_production_staff_parte_uno)
 
-staff_load_table = Table(
-    'STAFF_LOAD', metadata,
-    Column('id_staff', Integer, primary_key=True),
-    Column('cargo', String),
-)
+url_df_production_staff_parte_dos = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/staff_data_parte2.csv"
+df_production_staff_parte_dos = pd.read_csv(url_df_production_staff_parte_dos)
 
-id_genres_table = Table(
-    'GENRES_ID', metadata,
-    Column('id_genre', Integer, primary_key=True),
-    Column('genre', String),
-)
+df_casting = pd.concat([df_casting_parte_uno, df_casting_parte_dos])
+df_production_staff = pd.concat([df_production_staff_parte_uno, df_production_staff_parte_dos])
 
-id_movie_id_genre_table = Table(
-    'ID_MOVIE_ID_GENRE', metadata,
-    Column('id_movie', Integer, ForeignKey("MOVIES.id_movie")),
-    Column('id_genre', Integer, ForeignKey("GENRES_ID.id_genre")),
-)
-
-belong_name_id_movie_table = Table(
-    'BELONG_NAME_ID_MOVIE', metadata,
-    Column('id_belong', Integer, primary_key=True),
-    Column('name', String),
-    Column('id_movie', Integer, ForeignKey('MOVIE.id_movie')),
-)
-
-id_belong_id_genre_table = Table(
-    'ID_BELONG_ID_GENRE', metadata,
-    Column('id_belong', Integer, ForeignKey('BELONG_NAME_ID_MOVIE.id_belong')),
-    Column('id_genres', Integer, ForeignKey('GENRES_ID.id_genre'))
-)
-
-casting_table = Table(
-    'CASTING', metadata,
-    Column('cast_id', Integer, primary_key=True),
-    Column('character', String),
-    Column('credit_id', String),
-    Column('id_actor', Integer, ForeignKey('ID_CASTING_ACTOR.id_actor')),
-    Column('order', Integer),
-    Column('movie_id', Integer, ForeignKey('MOVIES.id_movie')),
-)
-
-production_staff_table = Table(
-    'PRODUCTION_STAFF', metadata,
-    Column('credit_id', String),
-    Column('departament', String),
-    Column('id_staff', Integer, ForeignKey('ID_STAFF.id_staff')),
-    Column('job', String),
-    Column('movie_id', Integer, ForeignKey('MOVIES.id_movie')),
-)
-
-
-@app.get("/items/")
-def read_items(db: Session = Depends(get_db)):
-    # Example of interacting with the database using the session `db`
-    # Replace this with actual database queries as needed
-    return {"message": "This endpoint interacts with the database"}
-
-def month_name_to_number(month_name: str):
-    month_name = month_name.lower()
-    months = {
-        'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
-        'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+def mes_a_numero(mes):
+    meses = {
+        "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
+        "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12
     }
-    return months.get(month_name)
+    return meses.get(mes.lower(), None)
 
-@app.get("/cantidad_filmaciones_mes/")
-def cantidad_filmaciones_mes(mes: str, db: Session = Depends(get_db)):
-    month_number = month_name_to_number(mes)
-    if not month_number:
-        return {"error": "Mes inválido"}
+# Función para convertir el nombre del día en español a su nombre en inglés
+def dia_a_nombre(dia):
+    dias = {
+        "lunes": "Monday", "martes": "Tuesday", "miércoles": "Wednesday",
+        "jueves": "Thursday", "viernes": "Friday", "sábado": "Saturday", "domingo": "Sunday"
+    }
+    return dias.get(dia.lower(), None)
 
-    query = movies_table.select().where(extract('month', movies_table.c.release_date) == month_number)
-    result = db.execute(query).fetchall()
-    return {"message": f"{len(result)} películas fueron estrenadas en el mes de {mes}"}
+@app.get("/cantidad_filmaciones_mes/{mes}")
+def cantidad_filmaciones_mes(mes: str):
+    mes_numero = mes_a_numero(mes)
+    if mes_numero is None:
+        raise HTTPException(status_code=400, detail="Mes inválido")
+    
+    df_movies['release_date'] = pd.to_datetime(df_movies['release_date'], errors='coerce')
+    peliculas_mes = df_movies[df_movies['release_date'].dt.month == mes_numero]
+    cantidad = len(peliculas_mes)
+    return {"mes": mes, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en el mes de {mes}"}
 
-@app.get("/cantidad_filmaciones_dia/")
-def cantidad_filmaciones_dia(dia: str, db: Session = Depends(get_db)):
-    try:
-        day_number = int(dia)
-    except ValueError:
-        return {"error": "Día inválido"}
+@app.get("/cantidad_filmaciones_dia/{dia}")
+def cantidad_filmaciones_dia(dia: str):
+    dia_nombre = dia_a_nombre(dia)
+    if dia_nombre is None:
+        raise HTTPException(status_code=400, detail="Día inválido")
+    
+    df_movies['release_date'] = pd.to_datetime(df_movies['release_date'], errors='coerce')
+    peliculas_dia = df_movies[df_movies['release_date'].dt.day_name() == dia_nombre]
+    cantidad = len(peliculas_dia)
+    return {"dia": dia, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en los días {dia}"}
 
-    query = movies_table.select().where(extract('day', movies_table.c.release_date) == day_number)
-    result = db.execute(query).fetchall()
-    return {"message": f"{len(result)} películas fueron estrenadas en el dia {dia}"}
+@app.get("/score_titulo/{titulo}")
+def score_titulo(titulo: str):
+    pelicula = df_belong_name_id_movie[df_belong_name_id_movie['name'].str.contains(titulo, case=False, na=False)]
+    if pelicula.empty:
+        raise HTTPException(status_code=404, detail="Película no encontrada")
+    
+    pelicula_info = pelicula.iloc[0]
+    id_movie = pelicula_info['id_movie']
+    movie_details = df_movies[df_movies['id_movie'] == id_movie].iloc[0]
+    return {
+        "titulo": pelicula_info['name'],
+        "anio_estreno": movie_details['release_year'],
+        "score": movie_details['popularity'],
+        "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']} con un score/popularidad de {movie_details['popularity']}"
+    }
 
-@app.get("/score_titulo/")
-def score_titulo(titulo_de_la_filmacion: str, db: Session = Depends(get_db)):
-    # Buscar el ID de la película con el título proporcionado en BELONG_NAME_ID_MOVIE
-    query_belongs = belong_name_id_movie_table.select().where(
-        belong_name_id_movie_table.c.name == titulo_de_la_filmacion
-    )
-    belong_info = db.execute(query_belongs).fetchone()
+@app.get("/votos_titulo/{titulo}")
+def votos_titulo(titulo: str):
+    pelicula = df_belong_name_id_movie[df_belong_name_id_movie['name'].str.contains(titulo, case=False, na=False)]
+    if pelicula.empty:
+        raise HTTPException(status_code=404, detail="Película no encontrada")
+    
+    pelicula_info = pelicula.iloc[0]
+    id_movie = pelicula_info['id_movie']
+    movie_details = df_movies[df_movies['id_movie'] == id_movie].iloc[0]
+    if movie_details['vote_count'] < 2000:
+        return {"mensaje": "La película no cumple con la condición de tener al menos 2000 valoraciones"}
+    
+    return {
+        "titulo": pelicula_info['name'],
+        "cantidad_votos": movie_details['vote_count'],
+        "promedio_votos": movie_details['vote_average'],
+        "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']}. La misma cuenta con un total de {movie_details['vote_count']} valoraciones, con un promedio de {movie_details['vote_average']}"
+    }
 
-    if belong_info:
-        # Obtener los detalles de la película desde MOVIES usando el ID obtenido
-        query_movie = movies_table.select().where(movies_table.c.id_movie == belong_info.id_movie)
-        movie = db.execute(query_movie).fetchone()
-
-        if movie:
-            return {
-                "title": titulo_de_la_filmacion,
-                "release_year": movie.release_date.year,
-                "score": movie.vote_average
-            }
-        else:
-            raise HTTPException(status_code=404, detail="Película no encontrada en la tabla MOVIES")
-    else:
-        raise HTTPException(status_code=404, detail="Película no encontrada en la tabla BELONG_NAME_ID_MOVIE")
-
-
-@app.get("/votos_titulo/")
-def votos_titulo(titulo_de_la_filmacion: str, db: Session = Depends(get_db)):
-    # Buscar el ID de la película con el título proporcionado en BELONG_NAME_ID_MOVIE
-    query_belongs = belong_name_id_movie_table.select().where(
-        belong_name_id_movie_table.c.name == titulo_de_la_filmacion
-    )
-    belong_info = db.execute(query_belongs).fetchone()
-
-    if belong_info:
-        # Obtener los detalles de la película desde MOVIES usando el ID obtenido
-        query_movie = movies_table.select().where(movies_table.c.id_movie == belong_info.id_movie)
-        movie = db.execute(query_movie).fetchone()
-
-        if movie:
-            if movie.vote_count >= 2000:
-                return {
-                    "title": titulo_de_la_filmacion,
-                    "release_year": movie.release_date.year,
-                    "votes": movie.vote_count,
-                    "average_vote": movie.vote_average
-                }
-            else:
-                raise HTTPException(status_code=400, detail="La película no cumple con la condición de tener al menos 2000 valoraciones")
-        else:
-            raise HTTPException(status_code=404, detail="Película no encontrada en la tabla MOVIES")
-    else:
-        raise HTTPException(status_code=404, detail="Película no encontrada en la tabla BELONG_NAME_ID_MOVIE")
-
-
-@app.get("/get_actor/")
-def get_actor(nombre_actor: str, db: Session = Depends(get_db)):
-    query_actor = actors_table.select().where(actors_table.c.name == nombre_actor)
-    actor = db.execute(query_actor).fetchone()
-    if actor:
-        query_movies = casting_table.select().where(casting_table.c.id_actor == actor.id_actor)
-        movie_ids = [row.movie_id for row in db.execute(query_movies).fetchall()]
-        query_movies_details = movies_table.select().where(movies_table.c.id_movie.in_(movie_ids))
-        movies = db.execute(query_movies_details).fetchall()
-        if movies:
-            total_revenue = sum(movie.revenue for movie in movies)
-            return {
-                "actor": nombre_actor,
-                "number_of_movies": len(movies),
-                "total_revenue": total_revenue,
-                "average_revenue": total_revenue / len(movies) if movies else 0
-            }
-        else:
-            raise HTTPException(status_code=404, detail=f"No se encontraron películas para el actor {nombre_actor}")
-    else:
+@app.get("/get_actor/{nombre_actor}")
+def get_actor(nombre_actor: str):
+    actor_movies = df_casting[df_casting['character'].str.contains(nombre_actor, case=False, na=False)]
+    if actor_movies.empty:
         raise HTTPException(status_code=404, detail="Actor no encontrado")
+    
+    cantidad_peliculas = len(actor_movies)
+    retorno_total = actor_movies['return'].sum()
+    promedio_retorno = retorno_total / cantidad_peliculas if cantidad_peliculas > 0 else 0
+    return {
+        "actor": nombre_actor,
+        "cantidad_peliculas": cantidad_peliculas,
+        "retorno_total": retorno_total,
+        "promedio_retorno": promedio_retorno,
+        "mensaje": f"El actor {nombre_actor} ha participado de {cantidad_peliculas} filmaciones, consiguiendo un retorno de {retorno_total} con un promedio de {promedio_retorno} por filmación"
+    }
 
-@app.get("/get_director/")
-def get_director(nombre_director: str, db: Session = Depends(get_db)):
-    # Verificar si el nombre del director existe en la tabla ID_STAFF
-    query_director = staff_table.select().where(staff_table.c.name == nombre_director)
-    director = db.execute(query_director).fetchone()
-    if director:
-        # Si el director existe, verificar si tiene el cargo de "director" en la tabla STAFF_LOAD
-        query_cargo = staff_load_table.select().where(
-            (staff_load_table.c.id_staff == director.id_staff) &
-            (staff_load_table.c.cargo == 'director')
-        )
-        cargo_director = db.execute(query_cargo).fetchone()
-        if cargo_director:
-            # Si tiene el cargo de director, proceder a obtener las películas del director
-            query_movies = production_staff_table.select().where(production_staff_table.c.id_staff == director.id_staff)
-            movies = db.execute(query_movies).fetchall()
-            if movies:
-                director_info = []
-                for movie in movies:
-                    # Obtener el nombre de la película desde BELONG_NAME_ID_MOVIE
-                    query_belongs = belong_name_id_movie_table.select().where(
-                        belong_name_id_movie_table.c.id_movie == movie.id_movie
-                    )
-                    belong_info = db.execute(query_belongs).fetchone()
-                    if belong_info:
-                        movie_title = belong_info.name
-                    else:
-                        movie_title = "Título no encontrado"
-
-                    director_info.append({
-                        "title": movie_title,
-                        "release_date": movie.release_date,
-                        "individual_revenue": movie.revenue,
-                        "budget": movie.budget,
-                        "profit": movie.revenue - movie.budget
-                    })
-                return {
-                    "director": nombre_director,
-                    "movies": director_info
-                }
-            else:
-                raise HTTPException(status_code=404, detail=f"No se encontraron películas para el director {nombre_director}")
-        else:
-            raise HTTPException(status_code=404, detail=f"{nombre_director} no tiene el cargo de director")
-    else:
+@app.get("/get_director/{nombre_director}")
+def get_director(nombre_director: str):
+    director_staff = df_id_staff[df_id_staff['name'].str.contains(nombre_director, case=False, na=False)]
+    if director_staff.empty:
         raise HTTPException(status_code=404, detail="Director no encontrado")
+    
+    director_id = director_staff['id_staff'].iloc[0]
+    director_movies = df_production_staff[
+        (df_production_staff['id_staff'] == director_id) & 
+        (df_production_staff['job'] == 'Director')
+    ]
+    
+    if director_movies.empty:
+        raise HTTPException(status_code=404, detail="Director no tiene películas registradas")
+
+    resultado = []
+    for _, row in director_movies.iterrows():
+        pelicula_info = df_movies[df_movies['id_movie'] == row['movie_id']].iloc[0]
+        resultado.append({
+            "titulo": pelicula_info['title'],
+            "fecha_lanzamiento": pelicula_info['release_date'],
+            "retorno_individual": pelicula_info['return'],
+            "costo": pelicula_info['budget'],
+            "ganancia": pelicula_info['revenue']
+        })
+    
+    return {
+        "director": nombre_director,
+        "peliculas": resultado,
+        "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
+    }
