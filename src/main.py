@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import pandas as pd
 
+# URLs de los archivos CSV que se van a cargar
 url_df_id_belong_id_genre = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20%20Datos%20Movie%20limpia/belong_id_genre.csv"
 df_id_belong_id_genre = pd.read_csv(url_df_id_belong_id_genre)
 
@@ -25,30 +26,32 @@ df_id_staff = pd.read_csv(url_df_id_staff)
 url_df_staff_load = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/cargo_staff.csv"
 df_staff_load = pd.read_csv(url_df_staff_load)
 
-
-#MANEJAREMOS LOS DATOS QUE ESTAN DIVIDOS PRIMERO LA TABLA CASTING DONDE ESTAN LOS ACTORES POSTULANTES
+# Cargando los datos divididos de la tabla "casting" (actores postulantes)
 url_df_casting_parte_uno = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte1.csv"
 df_casting_parte_uno = pd.read_csv(url_df_casting_parte_uno)
 
 url_df_casting_parte_dos = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/casting_data_parte2.csv"
 df_casting_parte_dos = pd.read_csv(url_df_casting_parte_dos)
 
-#MANEJAREMOS LA TABLA STAFF DONDE ESTAN EL PERSONAL
+# Cargando los datos divididos de la tabla "staff" (personal)
 url_df_production_staff_parte_uno = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/staff_data_parte1.csv"
 df_production_staff_parte_uno = pd.read_csv(url_df_production_staff_parte_uno)
 
 url_df_production_staff_parte_dos = "https://raw.githubusercontent.com/Nico22724/Proyecto_Henry_MLOps/main/data/Base%20de%20Datos%20Staff%20limpia/staff_data_parte2.csv"
 df_production_staff_parte_dos = pd.read_csv(url_df_production_staff_parte_dos)
 
+# Concatenar las partes de los dataframes
 df_casting = pd.concat([df_casting_parte_uno, df_casting_parte_dos])
 df_production_staff = pd.concat([df_production_staff_parte_uno, df_production_staff_parte_dos])
 
+# Crear la instancia de la aplicación FastAPI
 app = FastAPI(
     title="FastAPI",
     description="Endpoints API",
     version="1.0.0"
 )
 
+# Función para convertir el nombre del mes de español a número
 def mes_a_numero(mes):
     meses = {
         "enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6,
@@ -56,7 +59,7 @@ def mes_a_numero(mes):
     }
     return meses.get(mes.lower(), None)
 
-# Función para convertir el nombre del día en español a su nombre en inglés
+# Función para convertir el nombre del día de español a su nombre en inglés
 def dia_a_nombre(dia):
     dias = {
         "lunes": "Monday", "martes": "Tuesday", "miércoles": "Wednesday",
@@ -64,6 +67,7 @@ def dia_a_nombre(dia):
     }
     return dias.get(dia.lower(), None)
 
+# Endpoint para obtener la cantidad de filmaciones en un mes específico
 @app.get("/cantidad_filmaciones_mes/{mes}")
 def cantidad_filmaciones_mes(mes: str):
     mes_numero = mes_a_numero(mes)
@@ -75,7 +79,7 @@ def cantidad_filmaciones_mes(mes: str):
     cantidad = int(len(peliculas_mes))  # Convertir a tipo nativo de Python
     return {"mes": mes, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en el mes de {mes}"}
 
-
+# Endpoint para obtener la cantidad de filmaciones en un día específico
 @app.get("/cantidad_filmaciones_dia/{dia}")
 def cantidad_filmaciones_dia(dia: str):
     dia_nombre = dia_a_nombre(dia)
@@ -87,7 +91,7 @@ def cantidad_filmaciones_dia(dia: str):
     cantidad = int(len(peliculas_dia))  # Convertir a tipo nativo de Python
     return {"dia": dia, "cantidad": cantidad, "mensaje": f"{cantidad} películas fueron estrenadas en los días {dia}"}
 
-
+# Endpoint para obtener el score de una película por título
 @app.get("/score_titulo/{titulo}")
 def score_titulo(titulo: str):
     pelicula = df_belong_name_id_movie[df_belong_name_id_movie['name'].str.contains(titulo, case=False, na=False)]
@@ -104,6 +108,7 @@ def score_titulo(titulo: str):
         "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']} con un score/popularidad de {movie_details['popularity']}"
     }
 
+# Endpoint para obtener la cantidad de votos y promedio de votos de una película por título
 @app.get("/votos_titulo/{titulo}")
 def votos_titulo(titulo: str):
     pelicula = df_belong_name_id_movie[df_belong_name_id_movie['name'].str.contains(titulo, case=False, na=False)]
@@ -123,7 +128,7 @@ def votos_titulo(titulo: str):
         "mensaje": f"La película {pelicula_info['name']} fue estrenada en el año {movie_details['release_year']}. La misma cuenta con un total de {movie_details['vote_count']} valoraciones, con un promedio de {movie_details['vote_average']}"
     }
 
-
+# Endpoint para obtener información sobre un actor por nombre
 @app.get("/get_actor/{nombre_actor}")
 def get_actor(nombre_actor: str):
     actor_movies = df_casting[df_casting['character'].str.contains(nombre_actor, case=False, na=False)]
@@ -141,6 +146,7 @@ def get_actor(nombre_actor: str):
         "mensaje": f"El actor {nombre_actor} ha participado de {cantidad_peliculas} filmaciones, consiguiendo un retorno de {retorno_total} con un promedio de {promedio_retorno} por filmación"
     }
 
+# Endpoint para obtener información sobre un director por nombre
 @app.get("/get_director/{nombre_director}")
 def get_director(nombre_director: str):
     director_staff = df_id_staff[df_id_staff['name'].str.contains(nombre_director, case=False, na=False)]
@@ -177,9 +183,7 @@ def get_director(nombre_director: str):
         "mensaje": f"El director {nombre_director} tiene {len(resultado)} películas registradas"
     }
 
-
-    
-# Punto de entrada
+# Punto de entrada para ejecutar la aplicación FastAPI con Uvicorn
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
